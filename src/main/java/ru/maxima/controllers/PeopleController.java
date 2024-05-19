@@ -1,8 +1,10 @@
 package ru.maxima.controllers;
 
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import ru.maxima.dao.PersonDAO;
 import ru.maxima.models.Person;
@@ -41,7 +43,11 @@ public class PeopleController {
     }
 
     @PostMapping
-    public String createNewPerson(@ModelAttribute("newPerson") Person person) {
+    public String createNewPerson(@ModelAttribute("newPerson") @Valid Person person,
+                                  BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            return "people/view-to-create-new-person";
+        }
         personDAO.save(person);
         return "redirect:/people";
     }
@@ -53,7 +59,12 @@ public class PeopleController {
     }
 
     @PostMapping("/{id}")
-    public String editPerson(@PathVariable("id") Long id, @ModelAttribute("editedPerson") Person person) {
+    public String editPerson(@PathVariable("id") Long id,
+                             @ModelAttribute("editedPerson") @Valid Person person,
+                             BindingResult bindingResult) {
+        if (bindingResult.hasErrors()) {
+            return "people/view-to-edit-person";
+        }
         personDAO.update(person, id);
         return "redirect:/people";
     }
