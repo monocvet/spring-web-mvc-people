@@ -12,7 +12,6 @@ import java.util.Optional;
 @Component
 public class PersonDAO {
 
-
     private final String URL = "jdbc:postgresql://localhost:5432/maxima";
     private final String USERNAME = "postgres";
     private final String PASSWORD = "postgres";
@@ -37,17 +36,14 @@ public class PersonDAO {
     public List<Person> getAllPeople() {
         List<Person> people = new ArrayList<>();
         try {
-            Statement statement = connection.createStatement();
-            String SQLQuery = "select * from person";
-            ResultSet resultSet = statement.executeQuery(SQLQuery);
+            PreparedStatement preparedStatement = connection.prepareStatement("select * from person");
+            ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
                 Person person = new Person();
-
                 person.setId(resultSet.getLong("id"));
                 person.setName(resultSet.getString("name"));
                 person.setAge(resultSet.getInt("age"));
                 person.setEmail(resultSet.getString("email"));
-
                 people.add(person);
             }
         } catch (SQLException e) {
@@ -59,11 +55,11 @@ public class PersonDAO {
     public Person findById(Long id) {
         Person person = new Person();
         try {
-            Statement statement = connection.createStatement();
-            String SQLQuery = "select * from person where id = " + id;
-            ResultSet resultSet = statement.executeQuery(SQLQuery);
+            PreparedStatement preparedStatement = connection.prepareStatement("select * from person where id = ?");
+            preparedStatement.setLong(1, id);
+            ResultSet resultSet = preparedStatement.executeQuery();
 
-            while (resultSet.next()){
+            while (resultSet.next()) {
                 person.setId(resultSet.getLong("id"));
                 person.setName(resultSet.getString("name"));
                 person.setAge(resultSet.getInt("age"));
@@ -72,7 +68,7 @@ public class PersonDAO {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-       return person;
+        return person;
     }
 
     public void save(Person person) {
@@ -81,11 +77,13 @@ public class PersonDAO {
                 .max(Comparator.naturalOrder());
         Long id = last.get();
         try {
-            Statement statement = connection.createStatement();
-            String SQLQuery = "insert into person (id, name, email, age) values (" + ++id + ", '"
-                    + person.getName() + "', '" + person.getEmail() + "', " + person.getAge() + ") ";
-
-            statement.executeUpdate(SQLQuery);
+            PreparedStatement preparedStatement = connection.prepareStatement("insert into " +
+                    "person (id, name, email, age) values (?, ?, ?, ?)");
+            preparedStatement.setLong(1, ++id);
+            preparedStatement.setString(2, person.getName());
+            preparedStatement.setString(3, person.getEmail());
+            preparedStatement.setInt(4, person.getAge());
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -93,12 +91,12 @@ public class PersonDAO {
 
     public void update(Person personFromView, Long id) {
         try {
-            Statement statement = connection.createStatement();
-            String SQLQuery = "update person set name = '" + personFromView.getName() + "' ," +
-                    " age = " + personFromView.getAge() + ", email = '" + personFromView.getEmail() +
-                    "' where id = " + id;
-
-            statement.executeUpdate(SQLQuery);
+            PreparedStatement preparedStatement = connection.prepareStatement
+                    ("update person set name = ?, age = ?, email = ? where id = " + id);
+            preparedStatement.setString(1, personFromView.getName());
+            preparedStatement.setInt(2, personFromView.getAge());
+            preparedStatement.setString(3, personFromView.getEmail());
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -106,10 +104,9 @@ public class PersonDAO {
 
     public void delete(Long id) {
         try {
-            Statement statement = connection.createStatement();
-            String SQLQuery = "delete from person where id = " + id;
-
-            statement.executeUpdate(SQLQuery);
+            PreparedStatement preparedStatement = connection.prepareStatement("delete from person where id = ?");
+            preparedStatement.setLong(1, id);
+            preparedStatement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
