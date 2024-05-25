@@ -28,7 +28,7 @@ public class PeopleController {
     }
 
     @GetMapping("/{id}")
-    public String showPersonById(@PathVariable("id") Long id, Model model){
+    public String showPersonById(@PathVariable("id") Long id, Model model) {
         Person person = personDAO.findById(id);
         model.addAttribute("personById", person);
         return "people/view-with-person-by-id";
@@ -37,18 +37,19 @@ public class PeopleController {
     @GetMapping("/create")
     public String getPageToCreateNewPerson(Model model) {
         model.addAttribute("newPerson", new Person());
-        return"people/view-to-create-new-person";
+        return "people/view-to-create-new-person";
     }
 
     @PostMapping
-    public String createNewPerson(@ModelAttribute("newPerson") Person person){
+    public String createNewPerson(@ModelAttribute("newPerson") Person person) {
         personDAO.save(person);
         return "redirect:/people";
     }
+
     @GetMapping("/{id}/edit")
     public String getPageToEditPerson(Model model, @PathVariable("id") Long id) {
         model.addAttribute("editedPerson", personDAO.findById(id));
-        return"people/view-to-edit-person";
+        return "people/view-to-edit-person";
     }
 
     @PostMapping("/{id}")
@@ -62,5 +63,4 @@ public class PeopleController {
         personDAO.delete(id);
         return "redirect:/people";
     }
-
 }
