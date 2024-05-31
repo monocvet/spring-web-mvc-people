@@ -1,6 +1,10 @@
 package ru.maxima.dao;
 
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
+import ru.maxima.models.Book;
 import ru.maxima.models.Person;
 
 import java.sql.*;
@@ -12,103 +16,37 @@ import java.util.Optional;
 @Component
 public class PersonDAO {
 
-    private final String URL = "jdbc:postgresql://localhost:5432/maxima";
-    private final String USERNAME = "postgres";
-    private final String PASSWORD = "postgres";
+    private final JdbcTemplate jdbcTemplate;
 
-    private Connection connection;
-
-    {
-        try {
-            Class.forName("org.postgresql.Driver");
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    public PersonDAO(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
-
     public List<Person> getAllPeople() {
-        List<Person> people = new ArrayList<>();
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement("select * from person");
-            ResultSet resultSet = preparedStatement.executeQuery();
-            while (resultSet.next()) {
-                Person person = new Person();
-                person.setId(resultSet.getLong("id"));
-                person.setName(resultSet.getString("name"));
-                person.setAge(resultSet.getInt("age"));
-                person.setEmail(resultSet.getString("email"));
-                people.add(person);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return people;
+        return jdbcTemplate.query("select * from person", new PersonMapper());
     }
 
     public Person findById(Long id) {
-        Person person = new Person();
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement("select * from person where id = ?");
-            preparedStatement.setLong(1, id);
-            ResultSet resultSet = preparedStatement.executeQuery();
-
-            while (resultSet.next()) {
-                person.setId(resultSet.getLong("id"));
-                person.setName(resultSet.getString("name"));
-                person.setAge(resultSet.getInt("age"));
-                person.setEmail(resultSet.getString("email"));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return person;
+        return jdbcTemplate.queryForObject("select * from person where id = ?",
+                new Object[]{id}, new PersonMapper());
     }
 
     public void save(Person person) {
-        Optional<Long> last = getAllPeople().stream()
-                .map(Person::getId)
-                .max(Comparator.naturalOrder());
-        Long id = last.get();
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement("insert into " +
-                    "person (id, name, email, age) values (?, ?, ?, ?)");
-            preparedStatement.setLong(1, ++id);
-            preparedStatement.setString(2, person.getName());
-            preparedStatement.setString(3, person.getEmail());
-            preparedStatement.setInt(4, person.getAge());
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        jdbcTemplate.update("insert into person(name, age) values (?, ?)",
+                person.getName(), person.getAge());
     }
 
-    public void update(Person personFromView, Long id) {
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement
-                    ("update person set name = ?, age = ?, email = ? where id = " + id);
-            preparedStatement.setString(1, personFromView.getName());
-            preparedStatement.setInt(2, personFromView.getAge());
-            preparedStatement.setString(3, personFromView.getEmail());
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    public void update(Person person, Long id) {
+        jdbcTemplate.update("update person set name = ?, age = ? where id = ? ",
+                person.getName(), person.getAge(), id);
     }
 
     public void delete(Long id) {
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement("delete from person where id = ?");
-            preparedStatement.setLong(1, id);
-            preparedStatement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        jdbcTemplate.update("delete from person where id = ?", id);
+    }
+
+    public List<Book> showBooksByPerson(Long id) {
+       return jdbcTemplate.query("select * from book where person_id = ?",
+               new Object[]{id}, new BookMapper());
     }
 }
