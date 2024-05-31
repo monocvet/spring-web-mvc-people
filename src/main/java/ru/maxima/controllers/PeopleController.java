@@ -31,8 +31,8 @@ public class PeopleController {
 
     @GetMapping("/{id}")
     public String showPersonById(@PathVariable("id") Long id, Model model) {
-        Person person = personDAO.findById(id);
-        model.addAttribute("personById", person);
+        model.addAttribute("personById", personDAO.findById(id));
+        model.addAttribute("booksByPerson", personDAO.showBooksByPerson(id));
         return "people/view-with-person-by-id";
     }
 
